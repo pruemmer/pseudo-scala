@@ -51,7 +51,7 @@ package object pseudoscala {
     new RichElement(a)
 
   def any[A](s : Set[A]) : A = {
-    require(!s.isEmpty)
+    require(!s.isEmpty, "could not pick an element from the empty set")
     s.iterator.next
   }
 }

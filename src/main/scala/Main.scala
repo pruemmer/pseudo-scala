@@ -1,14 +1,14 @@
 
-@main def hello: Unit =
-  println("Hello world!")
-  println(msg)
-  testNaturals
+import pseudoscala._
 
-def msg = "I was compiled by Scala 3. :)"
+@main def hello: Unit =
+  println("Testing Pseudo-Scala!")
+  println
+  testNaturals
+  println
+  testSets
 
 def testNaturals = {
-
-  import pseudoscala._
 
   println("Testing ℕ")
 
@@ -35,5 +35,33 @@ def testNaturals = {
 
   for (n <- 0 to 10)
     println(s"fib($n) = ${fib(n)}")
+
+}
+
+def testSets = {
+
+  val s : Set[ℤ] = Set(1, 2, 3)
+
+  println("Testing set: " + s)
+
+  if (s == ∅)
+    println("empty")
+  else
+    println(s"${s.size} elements")
+
+  def powerSet(s : Set[ℤ]) : Set[Set[ℤ]] =
+    if (s == ∅) {
+      Set(∅)
+    } else {
+      val el = any(s)
+      val ps = powerSet(s \ Set(el))
+      ps ∪ (for (x <- ps) yield (x ∪ Set(el)))
+    }
+
+  val ps = powerSet(s)
+
+  println("Powerset: " + ps)
+
+  println("Powerset contains " + Set(1, 2) + ": " + (Set[ℤ](1, 2) ∈ ps))
 
 }

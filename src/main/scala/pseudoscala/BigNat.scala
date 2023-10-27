@@ -59,6 +59,12 @@ object BigNat {
     new BigNat(BigInt(i))
   }
   
+  def unapply(a : BigNat) : Option[Int] =
+    if (a.underlying >= Int.MinValue && a.underlying <= Int.MaxValue)
+      Some(a.intValue)
+    else
+      None
+
   def wrapNat(num : BigInt) : BigNat =
     new BigNat(num max 0)
 
@@ -125,6 +131,22 @@ class BigNat private (val underlying : BigInt)
 
   def %(that : BigNat) : BigNat =
     wrapNat(this.underlying % that.underlying)
+
+  def ≥(that : BigNat) : Boolean =
+    this >= that
+  def ≥(that : Int) : Boolean =
+    this >= that
+
+  def ≤(that : BigNat) : Boolean =
+    this <= that
+  def ≤(that : Int) : Boolean =
+    this <= that
+
+  def divides(that : BigNat) : Boolean =
+    if (this.underlying == 0)
+      that.underlying == 0
+    else
+      that.underlying % this.underlying == 0
 
   def intValue : Int = {
     require(underlying <= Int.MaxValue)

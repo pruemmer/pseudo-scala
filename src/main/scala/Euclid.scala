@@ -21,6 +21,17 @@ object Euclid extends App {
       x
   }
 
-  println(s"The GCD of 12 and 18 is ${gcd_iterative(12, 18)}")
+  def gcd_recursive(a : ℕ, b : ℕ) : ℕ =
+    if (a == 0)
+      b
+    else if (b == 0)
+      a
+    else if (a ≥ b)
+      gcd_recursive(a - b, b)
+    else
+      gcd_recursive(a, b - a)
+
+  println(s"Iterative: the GCD of 12 and 18 is ${gcd_iterative(12, 18)}")
+  println(s"Recursive: the GCD of 12 and 18 is ${gcd_recursive(12, 18)}")
 
 }

@@ -1,7 +1,7 @@
 
 import pseudoscala._
 
-@main def hello: Unit =
+@main def HelloWorld: Unit =
   println("Testing Pseudo-Scala!")
   println
   testNaturals
@@ -15,14 +15,6 @@ def testNaturals = {
   val x : ℕ = 42
 
   println(x + 1)
-
-/*
-  def fib(n : ℕ) : ℕ = n match {
-    case 0 => 0
-    case 1 => 1
-    case n => fib(n - 1) + fib(n - 2)
-  }
- */
 
   def fib(n : ℕ) : ℕ =
     if (n == 0) {

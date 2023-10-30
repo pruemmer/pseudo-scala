@@ -32,6 +32,8 @@ object Euclid extends App {
       gcd_recursive(a, b - a)
 
   println(s"Iterative: the GCD of 12 and 18 is ${gcd_iterative(12, 18)}")
+  println(s"Iterative: the GCD of 12 and 19 is ${gcd_iterative(12, 19)}")
   println(s"Recursive: the GCD of 12 and 18 is ${gcd_recursive(12, 18)}")
+  println(s"Recursive: the GCD of 12 and 19 is ${gcd_recursive(12, 19)}")
 
 }

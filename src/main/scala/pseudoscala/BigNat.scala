@@ -142,6 +142,11 @@ class BigNat private (val underlying : BigInt)
   def ≤(that : Int) : Boolean =
     this <= that
 
+  def ≠(that : BigNat) : Boolean =
+    underlying != that
+  def ≠(that : Int) : Boolean =
+    underlying != that
+
   def divides(that : BigNat) : Boolean =
     if (this.underlying == 0)
       that.underlying == 0

@@ -82,6 +82,11 @@ package object pseudoscala {
     def ≤(that : Int) : Boolean =
       underlying <= that
 
+    def ≠(that : BigInt) : Boolean =
+      underlying != that
+    def ≠(that : Int) : Boolean =
+      underlying != that
+
     def toℕ : BigNat =
       BigNat(underlying)
   }

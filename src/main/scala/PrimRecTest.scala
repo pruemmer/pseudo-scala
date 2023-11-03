@@ -23,12 +23,17 @@ object PrimRecLib {
   def minusStep(x : ℕ, y : ℕ, p : ℕ) : ℕ = pred(p)
   def minus(x : ℕ, y : ℕ) : ℕ = primrec(minusBase, minusStep)(x, y)
 
+  def iteHelpBase(t : ℕ, e : ℕ) : ℕ = t
+  def iteHelpStep(t : ℕ, e : ℕ, y : ℕ, p : ℕ) : ℕ = e
+  def iteHelp(t : ℕ, e : ℕ, y : ℕ) : ℕ =
+    primrec(iteHelpBase, iteHelpStep)(t, e, y)
+
   /**
    * For 0 <= cond <= 1:
-   * ite(cond == 0, thenCase, elseCase)
+   * if (cond == 0) thenCase else elseCase
    */
   def ite(cond : ℕ, thenCase : ℕ, elseCase : ℕ) : ℕ =
-    plus(mult(minus(one(), cond), thenCase), mult(cond, elseCase))
+    iteHelp(thenCase, elseCase, cond)
 
   def signumBase() : ℕ = zero()
   def signumStep(y : ℕ, p : ℕ) = one()

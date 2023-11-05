@@ -59,6 +59,9 @@ package object pseudoscala {
 
   val ε : Seq[Nothing] = Seq()
 
+  def head[A](l : Seq[A]) : A = l.head
+  def tail[A](l : Seq[A]) : Seq[A] = l.tail
+
   class RichSet[A](underlying : Set[A]) {
     def any : A = pseudoscala.any(underlying)
 

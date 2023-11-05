@@ -90,3 +90,15 @@ object PrimRecTest extends App {
   println(s"leq(1, 2) = ${leq(1, 2)}")
 
 }
+
+object MuRecTest extends App {
+
+  import PrimRecLib._
+  import pseudoscala.murec._
+
+  def polyDiff(n : ℕ) : ℕ = minus(27, mult(mult(n, n), n))
+  def polyZero() : ℕ = μ(polyDiff)()
+
+  println(s"polyZero() = ${polyZero()}")
+
+}

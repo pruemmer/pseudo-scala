@@ -44,31 +44,59 @@ object primitiverec {
   def π_4(x : ℕ*) : ℕ = x(3)
   def π_5(x : ℕ*) : ℕ = x(4)
 
-  def primrec(base : () => ℕ, step : (ℕ, ℕ) => ℕ)(y : ℕ) : ℕ =
-    if (y == 0)
-      base()
-    else
-      step(y - 1, primrec(base, step)(y - 1))
+  def primrec(base : () => ℕ, step : (ℕ, ℕ) => ℕ)(y : ℕ) : ℕ = {
+    var i : ℕ = 0
+    var res = base()
+    while (i < y) {
+      res = step(i, res)
+      i = i + 1
+    }
+    res
+  }
 
   def primrec(base : ℕ => ℕ, step : (ℕ, ℕ, ℕ) => ℕ)
-             (x1 : ℕ, y : ℕ) : ℕ =
-    if (y == 0)
-      base(x1)
-    else
-      step(x1, y - 1, primrec(base, step)(x1, y - 1))
+             (x1 : ℕ, y : ℕ) : ℕ = {
+    var i : ℕ = 0
+    var res = base(x1)
+    while (i < y) {
+      res = step(x1, i, res)
+      i = i + 1
+    }
+    res
+  }
 
   def primrec(base : (ℕ, ℕ) => ℕ, step : (ℕ, ℕ, ℕ, ℕ) => ℕ)
-             (x1 : ℕ, x2 : ℕ, y : ℕ) : ℕ =
-    if (y == 0)
-      base(x1, x2)
-    else
-      step(x1, x2, y - 1, primrec(base, step)(x1, x2, y - 1))
+             (x1 : ℕ, x2 : ℕ, y : ℕ) : ℕ = {
+    var i : ℕ = 0
+    var res = base(x1, x2)
+    while (i < y) {
+      res = step(x1, x2, i, res)
+      i = i + 1
+    }
+    res
+  }
 
   def primrec(base : (ℕ, ℕ, ℕ) => ℕ, step : (ℕ, ℕ, ℕ, ℕ, ℕ) => ℕ)
-             (x1 : ℕ, x2 : ℕ, x3 : ℕ, y : ℕ) : ℕ =
-    if (y == 0)
-      base(x1, x2, x3)
-    else
-      step(x1, x2, x3, y - 1, primrec(base, step)(x1, x2, x3, y - 1))
+             (x1 : ℕ, x2 : ℕ, x3 : ℕ, y : ℕ) : ℕ = {
+    var i : ℕ = 0
+    var res = base(x1, x2, x3)
+    while (i < y) {
+      res = step(x1, x2, x3, i, res)
+      i = i + 1
+    }
+    res
+  }
+
+  def primrec(base : (ℕ, ℕ, ℕ, ℕ) => ℕ,
+              step : (ℕ, ℕ, ℕ, ℕ, ℕ, ℕ) => ℕ)
+             (x1 : ℕ, x2 : ℕ, x3 : ℕ, x4 : ℕ, y : ℕ) : ℕ = {
+    var i : ℕ = 0
+    var res = base(x1, x2, x3, x4)
+    while (i < y) {
+      res = step(x1, x2, x3, x4, i, res)
+      i = i + 1
+    }
+    res
+  }
 
 }

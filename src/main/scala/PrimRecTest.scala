@@ -101,4 +101,33 @@ object MuRecTest extends App {
 
   println(s"polyZero() = ${polyZero()}")
 
+  // Not a MuRec definition, TODO
+  def isPrime(n : ℕ) : ℕ =
+    if (n < 2) {
+      1
+    } else {
+      var k : ℕ = 2
+      while (k < n && k * k <= n) {
+        if (n % k == 0)
+          return 1
+        k = k + 1
+      }
+      0
+    }
+
+  // Not a MuRec definition, TODO
+  def and(a : ℕ, b : ℕ) : ℕ = if (a == 0) b else 1
+
+  def nextPrimeHelp(n : ℕ, m : ℕ) : ℕ =
+    and(leq(succ(n), m), isPrime(m))
+
+  def nextPrimeHelp2(n : ℕ) : ℕ = μ(nextPrimeHelp)(n)
+
+  def nextPrime(n : ℕ) : ℕ = ite(isPrime(n), nextPrimeHelp2(n), zero())
+
+  println(s"nextPrime(1) = ${nextPrime(1)}")
+  println(s"nextPrime(2) = ${nextPrime(2)}")
+  println(s"nextPrime(3) = ${nextPrime(3)}")
+  println(s"nextPrime(5) = ${nextPrime(5)}")
+
 }

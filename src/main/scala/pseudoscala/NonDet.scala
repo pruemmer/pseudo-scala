@@ -329,34 +329,48 @@ class TracingSearch extends NDSearch {
   import nondet.ValueEnum
   import TracingSearch._
 
-  private object FailureException extends Exception
+  private object FailureException       extends Exception
+  private object BoundExceededException extends Exception
 
   private var executionTree   : ExecutionTree = new ExecutionTree
   private var currentTreeNode : ExecutionTree = executionTree
   private var nextChoices     : List[Any]     = List()
 
-  private var bound = 0
+  private var stepsLeft = -1
 
   def btSearch[Result](comp : => Unit) : Option[Result] =
     throw new UnsupportedOperationException
 
   def search[Result](comp : => Result) : Option[Result] = {
     var res : Option[Result] = None
+    var curBound = 1
+    var boundHit = false
 
     while (res.isEmpty) {
       findNewTrace(executionTree, List()) match {
-        case Some(trace) =>
+        case Some(trace) => {
           nextChoices = trace.reverse
-        case None =>
-          return None
+        }
+        case None => {
+          if (boundHit) {
+            curBound = curBound + 1
+            boundHit = false
+            executionTree = new ExecutionTree
+            currentTreeNode = executionTree
+            nextChoices = List()
+          } else {
+            return None
+          }
+        }
       }
 
       try {
+        stepsLeft = curBound
         currentTreeNode = executionTree
-        bound = 0
         res = Some(comp)
       } catch {
-        case FailureException => // continue
+        case FailureException       => // continue
+        case BoundExceededException => boundHit = true
       }
     }
 
@@ -372,10 +386,10 @@ class TracingSearch extends NDSearch {
     chooseFromIterator(r.iterator, comp)
 
   private def chooseFromIterator[T,R](it : Iterator[T], comp : T => R) : R = {
-    bound = bound + 1
-    if (bound > 10) {
+    stepsLeft = stepsLeft - 1
+    if (stepsLeft < 0) {
       currentTreeNode.makeDeadend
-      throw FailureException
+      throw BoundExceededException
     }
 
     val choice =

@@ -54,12 +54,12 @@ object NonDetTest extends App {
   println("Testing simple grammar ...")
 
   def parens : String =
-    { "(" + parens + ")" } □ { "" } □ { parens + parens }
+    { "" } □ { "(" + parens + ")" } □ { parens + parens }
 
   val expr =
     search {
       val e = parens
-      assume(e.size > 5)
+      assume(e.size > 6)
       e
     }
 

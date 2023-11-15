@@ -60,6 +60,17 @@ object nondet {
     }
   }
 
+  /**
+   * Start a non-deterministic computation, implemented using
+   * repeated execution.
+   */
+  def search[Result](comp : => Result) : Option[Result] = {
+    val s = new TracingSearch
+    ndSearch.withValue(s) {
+      s.search(comp)
+    }
+  }
+
   private def withNDSearch[A](comp : NDSearch => A) : A = {
     val s = ndSearch.value
     assert(s != null, "No non-deterministic execution has been started")
@@ -72,6 +83,13 @@ object nondet {
    */
   def choose[T,R](comp : T => R)(implicit venum : ValueEnum[T]) : R =
     withNDSearch(s => s.choose(comp))
+
+  class RichComp[A](comp : => A) {
+    def □(comp2 : => A) : A =
+      choose { (v : Boolean) => if (v) comp2 else comp }
+  }
+
+  implicit def toRichComp[A](comp : => A) : RichComp[A] = new RichComp(comp)
 
   /**
    * Non-deterministically choose a value in the given integer range and
@@ -136,6 +154,11 @@ trait NDSearch {
    * Start a non-deterministic computation.
    */
   def btSearch[Result](comp : => Unit) : Option[Result]
+
+  /**
+   * Start a non-deterministic computation.
+   */
+  def search[Result](comp : => Result) : Option[Result]
 
   /**
    * Non-deterministically choose a value of type <code>T</code> and continue
@@ -211,6 +234,9 @@ class BacktrackingSearch extends NDSearch {
         None
     }
 
+  def search[Result](comp : => Result) : Option[Result] =
+    throw new UnsupportedOperationException
+
   def success[Result](r : Result) : Unit =
     throw new SuccessException (r)
 
@@ -241,5 +267,139 @@ class BacktrackingSearch extends NDSearch {
   def assume(f : Boolean) : Unit =
     if (!f)
       throw BacktrackingException
+
+}
+
+object TracingSearch {
+
+  class ExecutionTree {
+    var children         : List[(Any, ExecutionTree)] = List()
+    var remainingChoices : Iterator[Any]              = null
+    var deadend          : Boolean                    = false
+
+    def hasMoreChoices =
+      remainingChoices.hasNext
+
+    def getNextChoice : Any = {
+      val c = remainingChoices.next
+      children = (c, new ExecutionTree) :: children
+      c
+    }
+
+    def getChild(c : Any) : ExecutionTree =
+      children.find(p => p._1 == c).get._2
+
+    def makeDeadend : Unit = {
+      deadend = true
+      children = List()
+    }
+
+    override def toString =
+      "InnerNode(" + children.mkString("; ") + ")"
+  }
+
+  def findNewTrace(node   : ExecutionTree,
+                   suffix : List[Any]) : Option[List[Any]] = {
+    if (node.deadend) {
+      None
+    } else if (node.remainingChoices == null) {
+      Some(suffix)
+    } else if (node.hasMoreChoices) {
+      Some(node.getNextChoice :: suffix)
+    } else {
+      var res : Option[List[Any]] = None
+      for ((c, n) <- node.children)
+        if (res.isEmpty) {
+          res = findNewTrace(n, c :: suffix)
+          if (res.isEmpty)
+            n.makeDeadend
+        }
+      res
+    }
+  }
+
+}
+
+/**
+ * Functions controlling non-deterministic execution by recording all
+ * decisions made during an execution.
+ */
+class TracingSearch extends NDSearch {
+
+  import nondet.ValueEnum
+  import TracingSearch._
+
+  private object FailureException extends Exception
+
+  private var executionTree   : ExecutionTree = new ExecutionTree
+  private var currentTreeNode : ExecutionTree = executionTree
+  private var nextChoices     : List[Any]     = List()
+
+  private var bound = 0
+
+  def btSearch[Result](comp : => Unit) : Option[Result] =
+    throw new UnsupportedOperationException
+
+  def search[Result](comp : => Result) : Option[Result] = {
+    var res : Option[Result] = None
+
+    while (res.isEmpty) {
+      findNewTrace(executionTree, List()) match {
+        case Some(trace) =>
+          nextChoices = trace.reverse
+        case None =>
+          return None
+      }
+
+      try {
+        currentTreeNode = executionTree
+        bound = 0
+        res = Some(comp)
+      } catch {
+        case FailureException => // continue
+      }
+    }
+
+    res
+  }
+
+  def success[Result](r : Result) : Unit = ???
+
+  def choose[T,R](comp : T => R)(implicit venum : ValueEnum[T]) : R =
+    chooseFromIterator(venum.iterator, comp)
+
+  def chooseInt[R](r : Range)(comp : Int => R) : R =
+    chooseFromIterator(r.iterator, comp)
+
+  private def chooseFromIterator[T,R](it : Iterator[T], comp : T => R) : R = {
+    bound = bound + 1
+    if (bound > 10) {
+      currentTreeNode.makeDeadend
+      throw FailureException
+    }
+
+    val choice =
+      nextChoices match {
+        case List() => {
+          assert(currentTreeNode.remainingChoices == null)
+          assert(!currentTreeNode.deadend)
+          currentTreeNode.remainingChoices = it
+          currentTreeNode.getNextChoice
+        }
+        case c :: otherChoices => {
+          nextChoices = otherChoices
+          c
+        }
+      }
+
+    currentTreeNode = currentTreeNode.getChild(choice)
+    comp(choice.asInstanceOf[T])
+  }
+
+  def assume(f : Boolean) : Unit =
+    if (!f) {
+      currentTreeNode.makeDeadend
+      throw FailureException
+    }
 
 }

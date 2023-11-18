@@ -373,41 +373,8 @@ class TracingSearch extends NDSearch {
   def btSearch[Result](comp : => Unit) : Option[Result] =
     throw new UnsupportedOperationException
 
-  def search[Result](comp : => Result) : Option[Result] = {
-    var res : Option[Result] = None
-    var curBound = 1
-    var boundHit = false
-
-    while (res.isEmpty) {
-      findNewTrace(executionTree, List()) match {
-        case Some(trace) => {
-          nextChoices = trace.reverse
-        }
-        case None => {
-          if (boundHit) {
-            curBound = curBound + 1
-            boundHit = false
-            executionTree = new ExecutionTree
-            currentTreeNode = executionTree
-            nextChoices = List()
-          } else {
-            return None
-          }
-        }
-      }
-
-      try {
-        stepsLeft = curBound
-        currentTreeNode = executionTree
-        res = Some(comp)
-      } catch {
-        case FailureException       => // continue
-        case BoundExceededException => boundHit = true
-      }
-    }
-
-    res
-  }
+  def search[Result](comp : => Result) : Option[Result] =
+    enumerate(comp).headOption
 
   def enumerate[Result](comp : => Result) : Stream[Result] = {
     val results = new MHashSet[Result]

@@ -36,32 +36,53 @@ import pseudoscala.nondet._
 
 object NonDetTest extends App {
 
-  println("Running imperative non-deterministic program ...")
+  {
+    println("Running imperative non-deterministic program ...")
 
-  val res = 
-    execNondet {
-      var x : ℕ = 42
+    val res =
+      execNondet {
+        var x : ℕ = 42
 
-      for (n <- 0 until 3)
-        { x = x + 10 } □ { x = x + 1 } □ { x = 2*x }
+        for (n <- 0 until 3)
+          { x = x + 10 } □ { x = x + 1 } □ { x = 2*x }
 
-      assume(x > 100)
-      x
-    }
+        assume(x > 100)
+        x
+      }
 
-  println("Result: " + res)
+    println("Result: " + res)
+  }
 
-  println("Testing simple grammar, enumerating 10 words with correctly nested parentheses")
+  {
+    println
+    println("Testing simple grammar, enumerating 10 words with correctly nested parentheses")
 
-  def parens : String =
-    { "" } □ { "(" + parens + ")" } □ { parens + parens }
+    def parens : String =
+      { "" } □ { "(" + parens + ")" } □ { parens + parens }
 
-  val expr =
-    enumNondet {
-      parens
-    }
+    val expr =
+      enumNondet {
+        parens
+      }
 
-  for (str <- expr take 10)
-    println("\"" + str + "\"")
+    for (str <- expr take 10)
+      println("\"" + str + "\"")
+  }
+
+  {
+    println
+    println("More efficient, unambiguous version of the grammar")
+
+    def parens : String =
+      { "" } □ { "(" + parens + ")" + parens }
+
+    val expr =
+      enumNondet {
+        parens
+      }
+
+    for (str <- expr take 100)
+      println("\"" + str + "\"")
+  }
 
 }

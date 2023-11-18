@@ -60,7 +60,7 @@ object SAT extends App {
   }
 
   def solve(f : For) : Option[PartialModel] =
-    btSearch {
+    execNondetBT {
       val props = propositions(f).toList.sorted
       solveRec(f, Map(), props)
     }

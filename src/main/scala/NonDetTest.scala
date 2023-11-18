@@ -39,7 +39,7 @@ object NonDetTest extends App {
   println("Running imperative non-deterministic program ...")
 
   val res = 
-    search {
+    execNondet {
       var x : ℕ = 42
 
       for (n <- 0 until 3)
@@ -51,18 +51,17 @@ object NonDetTest extends App {
 
   println("Result: " + res)
 
-  println("Testing simple grammar ...")
+  println("Testing simple grammar, enumerating 10 words with correctly nested parentheses")
 
   def parens : String =
     { "" } □ { "(" + parens + ")" } □ { parens + parens }
 
   val expr =
-    search {
-      val e = parens
-      assume(e.size > 6)
-      e
+    enumNondet {
+      parens
     }
 
-  println(expr)
+  for (str <- expr take 10)
+    println("\"" + str + "\"")
 
 }

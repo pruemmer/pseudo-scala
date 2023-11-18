@@ -33,13 +33,14 @@
 package pseudoscala
 
 import scala.util.DynamicVariable
+import scala.collection.mutable.{HashSet => MHashSet}
 
 /**
  * Functions controlling non-deterministic execution.
  */
 object nondet {
 
-  private val ndSearch = new DynamicVariable[NDSearch](null)
+  protected[pseudoscala] val ndSearch = new DynamicVariable[NDSearch](null)
 
   trait ValueEnum[T] {
     def iterator : Iterator[T]
@@ -51,9 +52,11 @@ object nondet {
 
   /**
    * Start a non-deterministic computation, implemented using
-   * backtracking.
+   * backtracking. In this version of non-deterministic computation,
+   * the choice operators have to be tail-recursive, control must not
+   * return from those operators.
    */
-  def btSearch[A, Result](comp : => A) : Option[Result] = {
+  def execNondetBT[A, Result](comp : => A) : Option[Result] = {
     val s = new BacktrackingSearch
     ndSearch.withValue(s) {
       s.btSearch(comp)
@@ -64,10 +67,21 @@ object nondet {
    * Start a non-deterministic computation, implemented using
    * repeated execution.
    */
-  def search[Result](comp : => Result) : Option[Result] = {
+  def execNondet[Result](comp : => Result) : Option[Result] = {
     val s = new TracingSearch
     ndSearch.withValue(s) {
       s.search(comp)
+    }
+  }
+
+  /**
+   * Enumerate the different results of the given non-deterministic
+   * computation.
+   */
+  def enumNondet[Result](comp : => Result) : Stream[Result] = {
+    val s = new TracingSearch
+    ndSearch.withValue(s) {
+      s.enumerate(comp)
     }
   }
 
@@ -83,13 +97,6 @@ object nondet {
    */
   def choose[T,R](comp : T => R)(implicit venum : ValueEnum[T]) : R =
     withNDSearch(s => s.choose(comp))
-
-  class RichComp[A](comp : => A) {
-    def □(comp2 : => A) : A =
-      choose { (v : Boolean) => if (v) comp2 else comp }
-  }
-
-  implicit def toRichComp[A](comp : => A) : RichComp[A] = new RichComp(comp)
 
   /**
    * Non-deterministically choose a value in the given integer range and
@@ -114,6 +121,13 @@ object nondet {
     withNDSearch(s => s.assume(f))
 
   /**
+   * Assume that the given condition is true, block program execution
+   * otherwise.
+   */
+  def wishFor(f : Boolean) : Unit = 
+    withNDSearch(s => s.wishFor(f))
+
+  /**
    * Assume that the given option is not empty, and return its contents.
    */
   def assumeIsDefined[Data](v : Option[Data]) : Data =
@@ -131,15 +145,24 @@ object nondet {
   def sorry : Unit =
     withNDSearch(s => s.sorry)
 
-  // Some alternative function names.
-
-  def wishFor(f : Boolean) : Unit = 
-    withNDSearch(s => s.wishFor(f))
-
+  /**
+   * Program execution has reached a dead end.
+   */
   def abort : Unit =
     withNDSearch(s => s.abort)
+
+  /**
+   * Program execution has reached a dead end.
+   */
   def failure : Unit =
     withNDSearch(s => s.failure)
+
+  class RichComp[A](comp : => A) {
+    def □(comp2 : => A) : A =
+      choose { (v : Boolean) => if (v) comp2 else comp }
+  }
+
+  implicit def toRichComp[A](comp : => A) : RichComp[A] = new RichComp(comp)
 
 }
 
@@ -159,6 +182,12 @@ trait NDSearch {
    * Start a non-deterministic computation.
    */
   def search[Result](comp : => Result) : Option[Result]
+
+  /**
+   * Enumerate the different results of the given non-deterministic
+   * computation.
+   */
+  def enumerate[Result](comp : => Result) : Stream[Result]
 
   /**
    * Non-deterministically choose a value of type <code>T</code> and continue
@@ -235,6 +264,9 @@ class BacktrackingSearch extends NDSearch {
     }
 
   def search[Result](comp : => Result) : Option[Result] =
+    throw new UnsupportedOperationException
+
+  def enumerate[Result](comp : => Result) : Stream[Result] =
     throw new UnsupportedOperationException
 
   def success[Result](r : Result) : Unit =
@@ -375,6 +407,60 @@ class TracingSearch extends NDSearch {
     }
 
     res
+  }
+
+  def enumerate[Result](comp : => Result) : Stream[Result] = {
+    val results = new MHashSet[Result]
+
+    def enumRec(_curBound : Int,
+                _boundHit : Boolean) : Stream[Result] = {
+      var curBound = _curBound
+      var boundHit = _boundHit
+
+      findNewTrace(executionTree, List()) match {
+        case Some(trace) => {
+          nextChoices = trace.reverse
+        }
+        case None => {
+          if (boundHit) {
+            curBound = curBound + 1
+            boundHit = false
+            executionTree = new ExecutionTree
+            currentTreeNode = executionTree
+            nextChoices = List()
+          } else {
+            return Stream.empty
+          }
+        }
+      }
+
+      stepsLeft = curBound
+      currentTreeNode = executionTree
+
+      val nextRes : Option[Result] =
+        try {
+          val r = nondet.ndSearch.withValue(this) { Some(comp) }
+          currentTreeNode.makeDeadend
+          r
+        } catch {
+          case FailureException => {
+            None
+          }
+          case BoundExceededException => {
+            boundHit = true
+            None
+          }
+        }
+
+      nextRes match {
+        case Some(res) if results.add(res) => 
+          res #:: enumRec(curBound, boundHit)
+        case _ =>
+          enumRec(curBound, boundHit)
+      }
+    }
+
+    enumRec(1, false)
   }
 
   def success[Result](r : Result) : Unit = ???

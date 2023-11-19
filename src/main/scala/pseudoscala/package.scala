@@ -139,4 +139,6 @@ package object pseudoscala {
     require(!s.isEmpty, "could not pick an element from the empty set")
     s.iterator.next
   }
+
+  def skip : Unit = {}
 }
